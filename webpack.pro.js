@@ -1,11 +1,17 @@
 'use strict';
 
 const path = require('path');
-const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const HTMLInlineCSSWebpackPlugin = require("html-inline-css-webpack-plugin").default;
 
 module.exports = {
-  entry: './src/js/index.js',
+  // entry: './src/js/index.js',
+  entry: {
+    index: './src/js/index.js',
+  },
   output: {
     path: path.join(__dirname, 'dist'),
     filename: '[name]_[chunkhash:8].js'
@@ -29,16 +35,44 @@ module.exports = {
       {
         test: /.css$/,
         use: [
-          'style-loader',
+          {
+            loader: 'style-loader',
+            options: {
+              // 样式插入到head标签
+              insertAt: 'top',
+              // 将所有的style标签合成一个
+              singleton: true
+            }
+          },
           'css-loader'
         ]
       },
       {
         test: /.less$/,
         use: [
+          // 'style-loader',
           MiniCssExtractPlugin.loader,
           'css-loader',
-          'less-loader'
+          'less-loader',
+          {
+            // css补齐前缀
+            loader: 'postcss-loader',
+            options: {
+              plugins: () => [
+                require('autoprefixer')({
+                  overrideBrowserslist: ['last 2 version', '>1%', 'ios 7']
+                })
+              ]
+            }
+          },
+          {
+            // px转为rem
+            loader: 'px2rem-loader',
+            options: {
+              remUnit: 75,
+              remPrecesion: 8
+            }
+          }
         ]
       },
       {
@@ -74,8 +108,44 @@ module.exports = {
     ]
   },
   plugins: [
+    new CleanWebpackPlugin(),
+    // 将css提取成独立的文件使用link引入插入页面中，只用在production配置中，因为该插件暂时不支持HMR
     new MiniCssExtractPlugin({
       filename: '[name]_[contenthash:8].css'
+    }),
+    // 压缩css文件
+    new OptimizeCssAssetsWebpackPlugin({
+      assetNameRegExp: /\.css$/g,
+      cssProcessor: require('cssnano')
+    }),
+    // 将css的chunk文件，以内联即style的形式添加到html
+    new HTMLInlineCSSWebpackPlugin(),
+    // 生成创建html入口文件，引入的外部资源如script、link
+    new HtmlWebpackPlugin({
+      // html模版所在位置
+      template: path.join(__dirname, 'src/index.html'),
+      // 打包出的html文件名称
+      filename: 'index.html',
+      // 将生成的js、css的chunks文件添加到html页面中，主要应用于多入口文件，可以指定当前html插入的指定chunk文件，entry设置对象形式
+      // entry设置单个文件，不设置chunks，则生成main文件插入到html页面中
+      chunks: ['index'],
+      // 对html文件进行压缩，默认为false不对html文件进行压缩，以下设置为具体的压缩选项
+      minify: {
+        html5: true,
+        // 是否去除空格，默认false
+        collapseWhitespace: false,
+        preserveLineBreaks: false,
+        // 压缩内联css
+        minifyCSS: true,
+        // 压缩内联js
+        minifyJS: true,
+        // 压缩后是否显示页面的注释信息
+        removeComments: true,
+      },
+      // 注入选项，默认true，true和body，javascirpt插入到html文件的body底部，head则插入到head标签的底部，false所有的资源都不被插入
+      inject: true,
+      // 给生成的文件配置hash值
+      hash: true,
     }),
   ],
   devServer: {

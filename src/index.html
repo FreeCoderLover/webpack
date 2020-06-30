@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    p{
+      font-size: 20px;
+      /* color: red; */
+      line-height: 24px;
+    }
+  </style>
+  <script><%= require('raw-loader!babel-loader!../node_modules/lib-flexible/flexible.js') %></script>
+
+  <!-- <script>${ require('raw-loader!babel-loader!../node_modules/lib-flexible/flexible.js') }</script> -->
+  <!-- <script>${ require('raw-loader!babel-loader!../node_modules/lib-flexible/flexible.js') }</script> -->
+</head>
+<body>
+  <div id="root">
+    <!-- <p>我是文件注释，压缩后将不会出现在html页面中</p> -->
+    <span>我是一个模块</span>   <span>我是一个模块</span>
+    <p>我是文件注释，压缩后将
+      不会出现在html页面中fffff</p>
+  </div>  
+  <script>
+    window.onload = function(){
+      // document.write('webpack')
+    }
+  </script>
+</body>
+</html>
